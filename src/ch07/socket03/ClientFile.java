@@ -1,4 +1,4 @@
-package ch07.socket2;
+package ch07.socket03;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -10,6 +10,7 @@ public class ClientFile {
 
     Socket socket;
     BufferedWriter bw;
+    BufferedReader keyboard;
     BufferedReader br;
 
     public ClientFile() {
@@ -22,20 +23,39 @@ public class ClientFile {
 
             // 키보드 연결
             System.out.println("3. 키보드 스트림 + 버퍼(read) 연결완료---------------");
-            br = new BufferedReader(new InputStreamReader(System.in));
+            keyboard = new BufferedReader(new InputStreamReader(System.in));
 
+            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // 새로운 스레드 역할(글 읽기)
+            ReadThread rt = new ReadThread();
+            Thread t1 = new Thread(rt);
+            t1.start();
+
+            // 메인 스레드의 역할(글 쓰기)
             while (true) {
                 System.out.println("4. 키보드 메시지 입력 대기중---------------");
-                String keyboardMsg = br.readLine();
+                String keyboardMsg = keyboard.readLine();
                 // 메세지의 끝을 알려줘야 한다.
                 bw.write(keyboardMsg + "\n");
                 bw.flush();
             }
-
         } catch (Exception e) {
             System.out.println("클라이언트소켓 에러 발생 : " + e.getMessage());
         }
+    }
 
+    class ReadThread implements Runnable {
+        public void run() {
+            while (true) {
+                try {
+                    String msg = br.readLine();
+                    System.out.println("서버로부터 받은 메시지 : " + msg);
+                } catch (Exception e) {
+                    System.out.println("서버소켓쪽에서 서버소켓 메시지를 입력받는 중 오류가 발생했습니다 :" + e.getMessage());
+                }
+            }
+        }
     }
 
     public static void main(String[] args) {
